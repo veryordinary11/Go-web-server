@@ -1,21 +1,31 @@
 package main
 
 import (
+	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/veryordinary11/Go-web-server/database"
 )
 
 type apiConfig struct {
 	fileserverHits int
+	DB             *database.DB
 }
 
 func main() {
 	const filepathRoot = "."
 	const port = "8080"
 
+	// Create a new database connection
+	db, err := database.NewDB("database.json")
+	if err != nil {
+		log.Fatalf("Error creating database: %v", err)
+	}
+
 	apiCfg := &apiConfig{
 		fileserverHits: 0,
+		DB:             db,
 	}
 
 	apiRouter := createAPIRouter(apiCfg)
@@ -40,7 +50,7 @@ func main() {
 		Handler: corsRouter,
 	}
 
-	err := server.ListenAndServe()
+	err = server.ListenAndServe()
 	if err != nil {
 		panic(err)
 	}
