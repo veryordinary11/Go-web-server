@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"log"
 	"net/http"
 
@@ -14,11 +15,24 @@ type apiConfig struct {
 }
 
 func main() {
+	// Define the --debug flag
+	var debug bool
+	flag.BoolVar(&debug, "debug", false, "Enable debug mode")
+	flag.Parse()
+
+	var path string
+	if debug {
+		log.Println("Debug mode enabled")
+		path = "database_test.json"
+	} else {
+		path = "database.json"
+	}
+
 	const filepathRoot = "."
 	const port = "8080"
 
 	// Create a new database connection
-	db, err := database.NewDB("database.json")
+	db, err := database.NewDB(path)
 	if err != nil {
 		log.Fatalf("Error creating database: %v", err)
 	}
@@ -29,13 +43,11 @@ func main() {
 	}
 
 	apiRouter := createAPIRouter(apiCfg)
-
 	adminRouter := createAdminRouter(apiCfg)
 
 	r := chi.NewRouter()
 
 	r.Mount("/api", apiRouter)
-
 	r.Mount("/admin", adminRouter)
 
 	fsHandler := apiCfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(filepathRoot))))
