@@ -19,9 +19,8 @@ type UserWithoutPassword struct {
 }
 
 type UserLoginRequest struct {
-	Email           string `json:"email"`
-	Password        string `json:"password"`
-	ExpiresInSecond *int   `json:"expiresInSecond"`
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 // CreateUser creates a new user and saves it to disk

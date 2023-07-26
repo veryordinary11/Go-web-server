@@ -41,22 +41,13 @@ func handlerLogin(db *database.DB, jwtSecret string) http.HandlerFunc {
 			return
 		}
 
-		// Generate the JWT token
-		var tokenExpireInSecond int
-
-		// Check if the expiresInSecond is valid(0~86400)
-		if requestBody.ExpiresInSecond != nil && *requestBody.ExpiresInSecond > 0 && *requestBody.ExpiresInSecond <= 86400 {
-			tokenExpireInSecond = *requestBody.ExpiresInSecond
-		} else {
-			// Default expiration time is 24 hours
-			tokenExpireInSecond = 86400
-		}
-
-		expiresAt := time.Now().UTC().Add(time.Second * time.Duration(tokenExpireInSecond)).Unix()
+		// Generate the JWT access token
+		const accessTokenExpireInSecondDefault = 60 * 60 // 1 hour
+		expiresAt := time.Now().UTC().Add(time.Second * time.Duration(accessTokenExpireInSecondDefault)).Unix()
 
 		token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
 			"sub": strconv.Itoa(user.ID),
-			"iss": "chirpy",
+			"iss": "chirpy-access",
 			"exp": expiresAt,
 			"iat": time.Now().UTC().Unix(),
 		})
@@ -68,15 +59,35 @@ func handlerLogin(db *database.DB, jwtSecret string) http.HandlerFunc {
 			return
 		}
 
+		// Generate the JWT refresh token
+		const refreshTokenExpireInSecondDefault = 60 * 60 * 24 * 60 // 60 days
+		refreshTokenExpiresAt := time.Now().UTC().Add(time.Second * time.Duration(refreshTokenExpireInSecondDefault)).Unix()
+
+		refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+			"sub": strconv.Itoa(user.ID),
+			"iss": "chirpy-refresh",
+			"exp": refreshTokenExpiresAt,
+			"iat": time.Now().UTC().Unix(),
+		})
+
+		// Sign the refresh token with the secret key
+		signedRefreshToken, err := refreshToken.SignedString([]byte(jwtSecret))
+		if err != nil {
+			responseWithError(w, http.StatusInternalServerError, err.Error())
+			return
+		}
+
 		// Respond with the userWithoutPassword
 		responseWithJSON(w, http.StatusOK, struct {
-			ID    int    `json:"id"`
-			Email string `json:"email"`
-			Token string `json:"token"`
+			ID           int    `json:"id"`
+			Email        string `json:"email"`
+			Token        string `json:"token"`
+			RefreshToken string `json:"refreshToken"`
 		}{
-			ID:    user.ID,
-			Email: user.Email,
-			Token: signedToken,
+			ID:           user.ID,
+			Email:        user.Email,
+			Token:        signedToken,
+			RefreshToken: signedRefreshToken,
 		})
 	}
 }

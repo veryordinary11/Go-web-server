@@ -36,8 +36,10 @@ func handlerUsersUpdate(apiCfg *apiConfig) http.HandlerFunc {
 			return
 		}
 
-		// Check if the token is expired
+		// Check the token
 		if claims, ok := token.Claims.(*jwt.MapClaims); ok {
+
+			// Check the expiration time
 			if exp, ok := (*claims)["exp"].(float64); ok {
 				if time.Now().UTC().Unix() > int64(exp) {
 					responseWithError(w, http.StatusUnauthorized, "JWT token is expired")
@@ -47,6 +49,18 @@ func handlerUsersUpdate(apiCfg *apiConfig) http.HandlerFunc {
 				responseWithError(w, http.StatusUnauthorized, "Invalid JWT token: Expiration time not found")
 				return
 			}
+
+			// Check the issuer
+			if iss, ok := (*claims)["iss"].(string); ok {
+				if iss != "chirpy-access" {
+					responseWithError(w, http.StatusUnauthorized, "Invalid JWT token: Invalid issuer")
+					return
+				}
+			} else {
+				responseWithError(w, http.StatusUnauthorized, "Invalid JWT token: Issuer not found")
+				return
+			}
+
 		} else {
 			fmt.Println("Invalid token claims:", token.Claims)
 			responseWithError(w, http.StatusUnauthorized, "Invalid JWT token")
