@@ -4,14 +4,17 @@ import (
 	"flag"
 	"log"
 	"net/http"
+	"os"
 
 	"github.com/go-chi/chi/v5"
+	"github.com/joho/godotenv"
 	"github.com/veryordinary11/Go-web-server/database"
 )
 
 type apiConfig struct {
 	fileserverHits int
 	DB             *database.DB
+	jwtSecret      string
 }
 
 func main() {
@@ -19,6 +22,10 @@ func main() {
 	var debug bool
 	flag.BoolVar(&debug, "debug", false, "Enable debug mode")
 	flag.Parse()
+
+	// Load data from .env file
+	godotenv.Load()
+	jwtSecret := os.Getenv("JWT_SECRET")
 
 	var path string
 	if debug {
@@ -40,6 +47,7 @@ func main() {
 	apiCfg := &apiConfig{
 		fileserverHits: 0,
 		DB:             db,
+		jwtSecret:      jwtSecret,
 	}
 
 	apiRouter := createAPIRouter(apiCfg)

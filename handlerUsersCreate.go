@@ -7,6 +7,7 @@ import (
 	"github.com/veryordinary11/Go-web-server/database"
 )
 
+// POST /api/users
 func handlerUsersCreate(db *database.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
@@ -23,14 +24,14 @@ func handlerUsersCreate(db *database.DB) http.HandlerFunc {
 			return
 		}
 
-		// Email is valid
-		user, err := db.CreateUser(requestBody.Email)
+		// Email and password are valid
+		user, err := db.CreateUser(requestBody.Email, requestBody.Password)
 		if err != nil {
-			responseWithError(w, http.StatusInternalServerError, "Failed to create user")
+			responseWithError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
 
-		// Respond with the chirp
+		// Respond with the user
 		responseWithJSON(w, http.StatusOK, user)
 	}
 }

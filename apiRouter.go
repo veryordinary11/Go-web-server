@@ -15,5 +15,7 @@ func createAPIRouter(apiCfg *apiConfig) http.Handler {
 	r.Get("/chirps/{id}", handlerChirpsGet(apiCfg.DB))
 	r.Post("/chirps", handlerChirpsCreate(apiCfg.DB))
 	r.Post("/users", handlerUsersCreate(apiCfg.DB))
+	r.Post("/login", handlerLogin(apiCfg.DB, apiCfg.jwtSecret))
+	r.Put("/users", handlerUsersUpdate(apiCfg))
 	return r
 }
