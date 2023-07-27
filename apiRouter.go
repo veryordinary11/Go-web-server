@@ -25,8 +25,8 @@ func createAPIRouter(apiCfg *apiConfig) http.Handler {
 	r.Put("/users", handlerUsersUpdate(apiCfg))
 
 	// Token API
-	r.Post("/refresh", handlerRefreshToken(apiCfg.jwtSecret))
-	r.Post("/revoke", handlerRevokeToken(apiCfg.jwtSecret))
+	r.Post("/refresh", handlerRefreshToken(apiCfg))
+	r.Post("/revoke", handlerRevokeToken(apiCfg))
 
 	return r
 }

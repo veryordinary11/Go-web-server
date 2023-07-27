@@ -11,6 +11,9 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+const accessTokenExpireInSecondDefault = 60 * 60            // 1 hour
+const refreshTokenExpireInSecondDefault = 60 * 60 * 24 * 60 // 60 days
+
 func handlerLogin(db *database.DB, jwtSecret string) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
@@ -42,25 +45,28 @@ func handlerLogin(db *database.DB, jwtSecret string) http.HandlerFunc {
 		}
 
 		// Generate the JWT access token
-		const accessTokenExpireInSecondDefault = 60 * 60 // 1 hour
-		expiresAt := time.Now().UTC().Add(time.Second * time.Duration(accessTokenExpireInSecondDefault)).Unix()
-
-		token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
-			"sub": strconv.Itoa(user.ID),
-			"iss": "chirpy-access",
-			"exp": expiresAt,
-			"iat": time.Now().UTC().Unix(),
-		})
-
-		// Sign the token with the secret key
-		signedToken, err := token.SignedString([]byte(jwtSecret))
+		signedToken, err := CreateAccessToken(jwtSecret, strconv.Itoa(user.ID))
 		if err != nil {
 			responseWithError(w, http.StatusInternalServerError, err.Error())
 			return
 		}
+		// expiresAt := time.Now().UTC().Add(time.Second * time.Duration(accessTokenExpireInSecondDefault)).Unix()
+
+		// token := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
+		// 	"sub": strconv.Itoa(user.ID),
+		// 	"iss": "chirpy-access",
+		// 	"exp": expiresAt,
+		// 	"iat": time.Now().UTC().Unix(),
+		// })
+
+		// // Sign the token with the secret key
+		// signedToken, err := token.SignedString([]byte(jwtSecret))
+		// if err != nil {
+		// 	responseWithError(w, http.StatusInternalServerError, err.Error())
+		// 	return
+		// }
 
 		// Generate the JWT refresh token
-		const refreshTokenExpireInSecondDefault = 60 * 60 * 24 * 60 // 60 days
 		refreshTokenExpiresAt := time.Now().UTC().Add(time.Second * time.Duration(refreshTokenExpireInSecondDefault)).Unix()
 
 		refreshToken := jwt.NewWithClaims(jwt.SigningMethodHS256, jwt.MapClaims{
