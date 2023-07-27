@@ -4,20 +4,39 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/golang-jwt/jwt"
 	"github.com/veryordinary11/Go-web-server/database"
 )
 
-func handlerChirpsCreate(db *database.DB) http.HandlerFunc {
+func handlerChirpsCreate(apiCfg *apiConfig) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			responseWithError(w, http.StatusMethodNotAllowed, "Method not allowed")
 			return
 		}
 
+		// Validate the JWT token and get the user ID from the claims
+		authToken := ExtractTokenFromHeader(*r)
+		token, err := jwt.ParseWithClaims(authToken, &jwt.MapClaims{}, func(token *jwt.Token) (interface{}, error) {
+			return []byte(apiCfg.jwtSecret), nil
+		})
+		if err != nil || !token.Valid {
+			responseWithError(w, http.StatusUnauthorized, err.Error())
+			return
+		}
+
+		claims, ok := token.Claims.(*jwt.MapClaims)
+		if !ok {
+			responseWithError(w, http.StatusUnauthorized, "Invalid JWT token")
+			return
+		}
+
+		userId := (*claims)["sub"].(string)
+
 		// Decode the request body into a Chirp
 		decoder := json.NewDecoder(r.Body)
 		requestBody := database.Chirp{}
-		err := decoder.Decode(&requestBody)
+		err = decoder.Decode(&requestBody)
 		if err != nil {
 			responseWithError(w, http.StatusBadRequest, "Invalid request body")
 			return
@@ -33,7 +52,7 @@ func handlerChirpsCreate(db *database.DB) http.HandlerFunc {
 		cleanedText := replaceProfaneWords(requestBody.Body)
 
 		// Add the chirp to the database
-		chirp, err := db.CreateChirp(cleanedText)
+		chirp, err := apiCfg.DB.CreateChirp(userId, cleanedText)
 		if err != nil {
 			responseWithError(w, http.StatusInternalServerError, "Failed to create chirp")
 			return

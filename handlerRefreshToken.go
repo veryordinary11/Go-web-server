@@ -10,18 +10,7 @@ import (
 func handlerRefreshToken(apiCfg *apiConfig) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Extract the refresh token from the Authorization header
-		authHeader := r.Header.Get("Authorization")
-		if authHeader == "" {
-			responseWithError(w, http.StatusUnauthorized, "Missing Authorization header")
-			return
-		}
-
-		// Strip off the "Bearer " prefix from the header
-		refreshToken := extractAuthToken(authHeader)
-		if refreshToken == "" {
-			responseWithError(w, http.StatusUnauthorized, "Authorization header not found")
-			return
-		}
+		refreshToken := ExtractTokenFromHeader(*r)
 
 		// Validate the refresh token
 		token, err := jwt.ParseWithClaims(refreshToken, &jwt.MapClaims{}, func(token *jwt.Token) (interface{}, error) {
@@ -93,4 +82,14 @@ func CreateAccessToken(jwtSecret string, userId string) (string, error) {
 	}
 
 	return signedToken, nil
+}
+
+func ExtractTokenFromHeader(r http.Request) string {
+	authHeader := r.Header.Get("Authorization")
+	if authHeader == "" {
+		return ""
+	}
+
+	// Strip off the "Bearer " prefix from the header
+	return extractAuthToken(authHeader)
 }

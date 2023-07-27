@@ -13,18 +13,7 @@ import (
 func handlerUsersUpdate(apiCfg *apiConfig) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		// Extract the JWT token from the Authorization header
-		authHeader := r.Header.Get("Authorization")
-		if authHeader == "" {
-			responseWithError(w, http.StatusUnauthorized, "Missing Authorization header")
-			return
-		}
-
-		// Strip off the "Bearer " prefix from the header
-		authToken := extractAuthToken(authHeader)
-		if authToken == "" {
-			responseWithError(w, http.StatusUnauthorized, "Invalid Authorization header")
-			return
-		}
+		authToken := ExtractTokenFromHeader(*r)
 
 		// Validate the JWT token
 		token, err := jwt.ParseWithClaims(authToken, &jwt.MapClaims{}, func(token *jwt.Token) (interface{}, error) {
