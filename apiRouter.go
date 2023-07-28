@@ -29,5 +29,8 @@ func createAPIRouter(apiCfg *apiConfig) http.Handler {
 	r.Post("/refresh", handlerRefreshToken(apiCfg))
 	r.Post("/revoke", handlerRevokeToken(apiCfg))
 
+	// Webhooks API
+	r.Post("/polka/webhooks", handlerPolkaWebhooks(apiCfg))
+
 	return r
 }

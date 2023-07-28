@@ -8,14 +8,16 @@ import (
 )
 
 type User struct {
-	ID       int    `json:"id"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	ID          int    `json:"id"`
+	Email       string `json:"email"`
+	Password    string `json:"password"`
+	IsChirpyRed bool   `json:"isChirpyRed"`
 }
 
 type UserWithoutPassword struct {
-	ID    int    `json:"id"`
-	Email string `json:"email"`
+	ID          int    `json:"id"`
+	Email       string `json:"email"`
+	IsChirpyRed bool   `json:"isChirpyRed"`
 }
 
 type UserLoginRequest struct {
@@ -58,9 +60,10 @@ func (db *DB) CreateUser(email, password string) (UserWithoutPassword, error) {
 
 	// Create the new user
 	newUser := User{
-		ID:       newID,
-		Email:    email,
-		Password: string(hashedPassword),
+		ID:          newID,
+		Email:       email,
+		Password:    string(hashedPassword),
+		IsChirpyRed: false,
 	}
 
 	// Save the new user to the database
@@ -140,8 +143,9 @@ func (db *DB) UpdateUser(userID, email, password string) (UserWithoutPassword, e
 	}
 
 	updatedUserWithoutPassword := UserWithoutPassword{
-		ID:    user.ID,
-		Email: user.Email,
+		ID:          user.ID,
+		Email:       user.Email,
+		IsChirpyRed: user.IsChirpyRed,
 	}
 
 	return updatedUserWithoutPassword, nil
@@ -159,6 +163,30 @@ func (db *DB) saveUser(user User) error {
 	}
 
 	// Save the updated user to the database
+	dbStructure.Users[user.ID] = user
+
+	// Write and updated database back to disk
+	err = db.writeDB(dbStructure)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// UpdateUserIsChirpyRed updates the user's IsChirpyRed status
+func (db *DB) UpdateUserIsChirpyRed(user User) error {
+	db.mux.Lock()
+	defer db.mux.Unlock()
+
+	// Load the current database into mermory
+	dbStructure, err := db.loadDB()
+	if err != nil {
+		return err
+	}
+
+	// Update the user's IsChirpyRed status
+	user.IsChirpyRed = true
 	dbStructure.Users[user.ID] = user
 
 	// Write and updated database back to disk

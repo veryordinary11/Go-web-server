@@ -89,11 +89,13 @@ func handlerLogin(db *database.DB, jwtSecret string) http.HandlerFunc {
 			Email        string `json:"email"`
 			Token        string `json:"token"`
 			RefreshToken string `json:"refreshToken"`
+			IsChirpyRed  bool   `json:"isChirpyRed"`
 		}{
 			ID:           user.ID,
 			Email:        user.Email,
 			Token:        signedToken,
 			RefreshToken: signedRefreshToken,
+			IsChirpyRed:  user.IsChirpyRed,
 		})
 	}
 }
