@@ -13,10 +13,19 @@ type polkaWebhookRequest struct {
 	} `json:"data"`
 }
 
+const APIKEY_PREFIX = "Apikey "
+
 func handlerPolkaWebhooks(apiCfg *apiConfig) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 		if r.Method != http.MethodPost {
 			responseWithError(w, http.StatusMethodNotAllowed, "Method not allowed")
+			return
+		}
+
+		// Verify the request is from Polka by checking the Authorization header
+		authorization := r.Header.Get("Authorization")
+		if authorization != APIKEY_PREFIX+apiCfg.polkaKey {
+			responseWithError(w, http.StatusUnauthorized, "Unauthorized")
 			return
 		}
 
